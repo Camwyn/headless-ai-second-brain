@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "obsidian": {
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "obsidian-mcp",
+        "serve",
+        "--vault",
+        "main=C:\\Users\\username\\Documents\\Obsidian\\my-vault"
+      ]
+    }
+  }
+}

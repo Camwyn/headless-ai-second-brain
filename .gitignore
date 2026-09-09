@@ -1,0 +1,20 @@
+# Obsidian personal workspace layouts & caches
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+.trash/
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node caches
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
