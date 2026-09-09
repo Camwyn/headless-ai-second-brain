@@ -1,0 +1,61 @@
+name: 🐛 Bug Report
+description: Report an issue with setup scripts, connectors, or MCP communication
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! Please provide as much detail as possible to help us troubleshoot.
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you running?
+      options:
+        - Windows 11 / 10
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux (Ubuntu/Debian/Arch/etc.)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ai-client
+    attributes:
+      label: AI Client
+      description: Which AI desktop application or agent are you connecting?
+      options:
+        - ChatGPT Desktop (Windows)
+        - ChatGPT Desktop (macOS)
+        - Claude Desktop (Windows)
+        - Claude Desktop (macOS)
+        - Antigravity IDE / Cursor / IDE Agent
+        - Other (please specify in description)
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js & npx Version
+      description: Run `node -v` and `npx -v` in your terminal and paste the output here.
+      placeholder: "e.g. node v22.12.0, npx 10.9.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what happened and what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs / Console Output
+      description: Paste any error messages from your terminal or AI client console.
+      render: shell
