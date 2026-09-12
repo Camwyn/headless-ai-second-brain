@@ -80,4 +80,10 @@ Key Directives:
 1. Always search or read vault notes (specifically `AI CONTEXT.md` and active project notes) before answering strategic questions or drafting copy.
 2. When creating notes, use standardized markdown formatting, clean kebab-case filenames, and frontmatter.
 3. When updating worklogs, append timestamped updates using the format `### YYYY-MM-DD — @author`.
+4. When asked for a status update or "what's going on," also check the `00-INBOX/` folder (excluding its `Processed/` subfolder) for unfiled notes and mention how many there are, especially any that look more than a week old. Never move or delete an inbox note without being asked — just flag it and offer to help file it.
 ```
+
+> **Why this can't run on its own schedule:** ChatGPT's scheduled tasks don't inherit this MCP
+> connection (confirmed directly, not assumed — see `skills/SYNCED-FROM.md`), so there's no way
+> to make this check happen automatically here. Ask for a status update when you want one; it
+> won't happen ambiently the way a scheduled headless agent (Claude Code, Codex) could.

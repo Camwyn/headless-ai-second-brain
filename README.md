@@ -201,8 +201,9 @@ You and your team can now interact with the vault conversationally:
 | **obsidian-rag-grounding** | `/obsidian-rag` | Reads `AI CONTEXT.md` plus project/area overrides before creative or architectural work. |
 | **obsidian-auto-sync** | Autonomous / `/obsidian-flush` | Logs commits to `Worklog.md`, tasks to `Tasks.md`, decisions to `Decisions.md`. |
 | **obsidian-decision-sync** | `/obsidian-decision` | Formats a choice into a structured ADR with rejected alternatives. |
-| **obsidian-vault-audit** | `/audit-vault` | Health score, broken links, missing companion notes, drifted content mirrors. |
+| **obsidian-vault-audit** | `/audit-vault` | Health score, broken links, missing companion notes, drifted content mirrors, stale inbox backlog. |
 | **obsidian-mirror** | `/obsidian-mirror` | Establishes or re-syncs a declared repo↔vault content mirror — full, independent, kept-in-sync copies (see `rules/content-mirror-sync.md`), not a canonical-plus-stub pair. |
+| **obsidian-status** | `/obsidian-status` | On-demand, ephemeral status briefing — vault health, mirror drift, inbox backlog with a filing offer, open project tasks. A habit you run, not a scheduled job. |
 | **obsidian-index** | `/obsidian-index` | Builds `PARA-Index.md`, the master map of content. |
 | **obsidian-digest** | `/obsidian-digest` | Weekly/monthly rollup across all active projects. |
 

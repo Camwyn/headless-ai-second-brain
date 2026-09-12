@@ -21,7 +21,12 @@
     "projects_dir": "Projects",
     "areas_dir": "Areas",
     "resources_dir": "Resources",
-    "archives_dir": "Archives"
+    "archives_dir": "Archives",
+    "inbox_dir": "00-INBOX"
+  },
+  "inbox": {
+    "stale_after_days": 7,
+    "processed_subfolder": "Processed"
   },
   "default_vault": "main",
   "vault_path": "/absolute/path/to/your/Obsidian/vault",

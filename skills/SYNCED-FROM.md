@@ -22,6 +22,19 @@ content — so nothing was stripped or rewritten on the way in.
   seventh diagnostic vector, Mirror Drift, to catch it if a declared pair diverges. Built after
   this exact gap bit the project itself: a blog post and its vault dispatch copy drifted
   silently because neither declared the other, and no tool existed to notice.
+- **Also synced 2026-09-12:** New `obsidian-status` skill (`/obsidian-status` — on-demand,
+  ephemeral "what needs my attention" briefing: vault health, mirror drift, inbox backlog with
+  a filing offer, open project tasks; not scheduled, not written to a file, distinct from
+  `obsidian-digest`'s recorded periodic rollup). `obsidian-vault-audit` gained an eighth
+  vector, Inbox Backlog — deterministic (in `audit-vault.ps1`/`.sh`, not agent-driven like
+  Mirror Drift), flags notes in `00-INBOX/` older than `inbox.stale_after_days` (default 7,
+  matching BASB's actual weekly-review cadence), excluding `00-INBOX/Processed/`. New config
+  keys `para.inbox_dir`, `inbox.stale_after_days`, `inbox.processed_subfolder` — closes a real
+  gap where nothing in this suite previously knew the inbox convention existed at all. Verified
+  by testing against real stale/fresh/processed notes in the live vault, not just parsed —
+  caught two real bugs in the process: a non-ASCII emoji breaking under Windows PowerShell
+  5.1's file encoding (mojibake, not a hypothetical), and a `$Matches`-based date regex that
+  silently fell back to file mtime instead of the frontmatter `created:` date.
 - **Also synced 2026-09-11:** `install.ps1` / `install.sh` gained a third detection-based
   target, `~/.gemini/config/skills`, for Antigravity — confirmed directly against Antigravity
   itself (not assumed from docs) that it reads both a global `~/.gemini/config/skills/<name>/

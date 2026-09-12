@@ -3,9 +3,9 @@ name: obsidian-vault-audit
 description: >
   Autonomous diagnostic health and link integrity audit for Obsidian vaults.
   Scans for broken wikilinks, orphan notes, missing project companion notes
-  (Overview, Tasks, Worklog, Decisions), frontmatter schema violations, and drifted
-  content mirrors (declared repo/vault duplicate pairs) with automated remediation.
-  Trigger with '/audit-vault', 'audit vault', or 'vault health'.
+  (Overview, Tasks, Worklog, Decisions), frontmatter schema violations, drifted
+  content mirrors (declared repo/vault duplicate pairs), and a stale inbox backlog,
+  with automated remediation. Trigger with '/audit-vault', 'audit vault', or 'vault health'.
 ---
 
 # Obsidian Vault Health & Link Integrity Auditor
@@ -27,7 +27,7 @@ Activate `/audit-vault` when:
 
 ## 2. Multi-Vector Diagnostics
 
-The auditor evaluates seven distinct dimensions:
+The auditor evaluates eight distinct dimensions:
 
 | Vector | Diagnostic Focus | Threshold / Standard |
 | :--- | :--- | :--- |
@@ -38,6 +38,7 @@ The auditor evaluates seven distinct dimensions:
 | **Stub Notes** | Empty or near-empty notes (<30 characters) | Flags forgotten placeholders or zero-byte files |
 | **Frontmatter Compliance** | Missing YAML blocks or required fields | Checks `pillar`, `status`, `tags`, and timestamps |
 | **Mirror Drift** | Declared `mirror:` pairs (see `rules/content-mirror-sync.md`) that are one-sided, unreachable, or diverged | Both sides must declare each other and agree substantively |
+| **Inbox Backlog** | Notes in `<inbox_dir>/` (default `00-INBOX`) older than `inbox.stale_after_days` (default 7) | Excludes `<inbox_dir>/<processed_subfolder>/` (default `Processed`) and its own `README.md` |
 
 ### Mirror Drift — How It's Checked
 This vector is agent-driven, not part of `audit-vault.ps1`/`.sh` (those scripts only see the
@@ -55,6 +56,19 @@ machine entirely, so a generic script can't resolve it reliably):
    to reconcile.
 5. Never remediate a drifted mirror automatically — always report it and let the user (or a
    follow-up `/obsidian-mirror` run) decide the direction of the fix.
+
+### Inbox Backlog — How It's Checked
+Unlike Mirror Drift, this is a pure filesystem check (location + age, no cross-repo
+reachability or semantic judgment needed) — it runs inside `audit-vault.ps1`/`.sh` directly,
+not as a separate agent-driven pass:
+1. List every `.md` file directly under `<inbox_dir>/`, excluding `README.md` and anything
+   inside `<inbox_dir>/<processed_subfolder>/` — moved-and-filed notes never get re-flagged.
+2. Age comes from frontmatter `created:` if present, else the file's last-write time.
+3. Anything older than `inbox.stale_after_days` is **Stale**; report the total count either way.
+4. **Stays out of the numeric Health Score**, same as Mirror Drift — a full inbox is a
+   workflow-hygiene signal, not structural vault integrity.
+5. Never move or file anything automatically — this vector only reports. See
+   `obsidian-status` for the on-demand skill that offers to help file a stale backlog.
 
 ---
 
@@ -101,9 +115,9 @@ $$\text{Health Score} = \max(0, 100 - (2 \times \text{BrokenLinks}) - (5 \times 
 - 🟡 **75 - 89%**: **GOOD** — Minor link gaps or unlinked notes, but core structure is intact.
 - 🔴 **< 75%**: **ATTENTION NEEDED** — Significant broken links or missing project companion notes require remediation.
 
-Mirror Drift findings are reported separately, not folded into this score — they depend on
-what's reachable in the current session, not a fixed vault-wide fact the way the other six
-vectors are.
+Mirror Drift and Inbox Backlog findings are reported separately, not folded into this score —
+Mirror Drift depends on what's reachable in the current session, and Inbox Backlog is a
+workflow-hygiene signal rather than a structural fact about the vault.
 
 ---
 
@@ -148,11 +162,20 @@ Format the user-facing diagnostic report cleanly:
 | `Areas/.../The Headless Brain....md` | `camwyn-and-co/src/notes/the-headless-brain.md` | ⚠️ Drifted — run `/obsidian-mirror` |
 | `Areas/.../Some Other Note.md` | `some-repo/docs/x.md` | ℹ️ Unverifiable — repo not open this session |
 
+### Inbox Backlog
+*(Omitted if the inbox is empty or nothing exceeds the threshold)*
+| Note | Age | Status |
+|---|---|---|
+| `00-INBOX/Quick idea about X.md` | 12 days | ⚠️ Stale |
+
+3 total in 00-INBOX, 1 stale (>7 days).
+
 ### 💡 Remediation Guidance
 1. **Auto-Scaffold Missing Companions**: Run `/audit-vault --fix-companions` to generate missing templates.
 2. **Fix Renamed Wikilinks**: Update old target stems in affected notes.
 3. **Index Orphan Notes**: Add unlinked notes into the appropriate Area MOC or `PARA-Index.md`.
 4. **Reconcile Drifted Mirrors**: Run `/obsidian-mirror` on each flagged pair.
+5. **Clear Inbox Backlog**: Run `/obsidian-status` for a filing offer, or file the notes manually.
 ```
 
 ---

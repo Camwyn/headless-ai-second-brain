@@ -7,16 +7,15 @@ param (
 )
 
 # 1. Resolve vault path: -VaultPath arg, then $env:OBSIDIAN_VAULT_PATH, then config `vault_path`.
-if (-not $VaultPath) { $VaultPath = $env:OBSIDIAN_VAULT_PATH }
-if (-not $VaultPath) {
-    $configPath = "$HOME\.agents\obsidian-config.json"
-    if (Test-Path $configPath) {
-        try {
-            $cfg = Get-Content $configPath -Raw | ConvertFrom-Json
-            if ($cfg.vault_path) { $VaultPath = [string]$cfg.vault_path }
-        } catch {}
-    }
+# Config is loaded here regardless of which path source wins, since the inbox settings below
+# (dir name, staleness threshold) come from it too.
+$cfg = $null
+$configPath = "$HOME\.agents\obsidian-config.json"
+if (Test-Path $configPath) {
+    try { $cfg = Get-Content $configPath -Raw | ConvertFrom-Json } catch {}
 }
+if (-not $VaultPath) { $VaultPath = $env:OBSIDIAN_VAULT_PATH }
+if (-not $VaultPath -and $cfg -and $cfg.vault_path) { $VaultPath = [string]$cfg.vault_path }
 
 if (-not $VaultPath -or -not (Test-Path $VaultPath)) {
     Write-Error "Vault path not found. Set 'vault_path' in ~/.agents/obsidian-config.json, `$env:OBSIDIAN_VAULT_PATH, or pass -VaultPath."
@@ -272,6 +271,41 @@ foreach ($f in $allFiles) {
     }
 }
 
+# 5.5. Check Inbox Backlog - pure filesystem check (location + age), so it lives here in the
+# deterministic script rather than as an agent-driven vector like Mirror Drift. Stays out of
+# the Health Score below: a full inbox is a workflow-hygiene signal, not structural integrity.
+$inboxDirName = if ($cfg -and $cfg.para -and $cfg.para.inbox_dir) { [string]$cfg.para.inbox_dir } else { "00-INBOX" }
+$staleAfterDays = if ($cfg -and $cfg.inbox -and $cfg.inbox.stale_after_days) { [int]$cfg.inbox.stale_after_days } else { 7 }
+$processedSubfolder = if ($cfg -and $cfg.inbox -and $cfg.inbox.processed_subfolder) { [string]$cfg.inbox.processed_subfolder } else { "Processed" }
+
+$inboxItems = [System.Collections.ArrayList]::new()
+$inboxDirPath = Join-Path $vaultRoot $inboxDirName
+if (Test-Path $inboxDirPath) {
+    $inboxFiles = Get-ChildItem -Path $inboxDirPath -Filter "*.md" -File -Recurse | Where-Object {
+        $_.Name -ne "README.md" -and
+        ($_.FullName.Substring($inboxDirPath.Length).TrimStart('\', '/').Split([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)[0] -ne $processedSubfolder)
+    }
+    foreach ($inf in $inboxFiles) {
+        $createdDate = $inf.LastWriteTime
+        try {
+            $firstLines = Get-Content $inf.FullName -TotalCount 15
+            $frontmatterText = ($firstLines -join "`n")
+            $createdMatch = [regex]::Match($frontmatterText, '(?m)^created:\s*"?([\d-]{10})"?')
+            if ($createdMatch.Success) {
+                $parsed = [DateTime]::MinValue
+                if ([DateTime]::TryParse($createdMatch.Groups[1].Value, [ref]$parsed)) { $createdDate = $parsed }
+            }
+        } catch {}
+        $ageDays = [Math]::Floor(((Get-Date) - $createdDate).TotalDays)
+        [void]$inboxItems.Add([PSCustomObject]@{
+            File    = $inf.FullName.Substring($vaultRoot.Length).TrimStart('\', '/').Replace('\', '/')
+            AgeDays = $ageDays
+            Stale   = $ageDays -gt $staleAfterDays
+        })
+    }
+}
+$inboxStaleItems = @($inboxItems | Where-Object { $_.Stale } | Sort-Object AgeDays -Descending)
+
 # 6. Compute Health Score
 $score = 100 - ($brokenLinks.Count * 2) - ($missingCompanions.Count * 5) - ($stubNotes.Count * 2)
 if ($score -lt 0) { $score = 0 }
@@ -291,6 +325,11 @@ $auditResults = [PSCustomObject]@{
     StubNotesCount        = $stubNotes.Count
     StubNotes             = $stubNotes
     SchemaWarningsCount   = $schemaWarnings.Count
+    InboxTotalCount       = $inboxItems.Count
+    InboxStaleCount       = $inboxStaleItems.Count
+    InboxStaleItems       = $inboxStaleItems
+    InboxDir              = $inboxDirName
+    InboxStaleAfterDays   = $staleAfterDays
 }
 
 # 7. Render Output
@@ -337,6 +376,23 @@ if ($Format -eq "Markdown") {
         }
         [void]$sb.AppendLine("")
     }
+
+    if ($inboxItems.Count -gt 0) {
+        [void]$sb.AppendLine("### Inbox Backlog")
+        if ($inboxStaleItems.Count -gt 0) {
+            [void]$sb.AppendLine("| Note | Age | Status |")
+            [void]$sb.AppendLine("|---|---|---|")
+            foreach ($item in ($inboxStaleItems | Select-Object -First 15)) {
+                [void]$sb.AppendLine("| $($item.File) | $($item.AgeDays) days | Stale |")
+            }
+            if ($inboxStaleItems.Count -gt 15) {
+                [void]$sb.AppendLine("*... and $($inboxStaleItems.Count - 15) more stale.*")
+            }
+            [void]$sb.AppendLine("")
+        }
+        [void]$sb.AppendLine("$($inboxItems.Count) total in $inboxDirName, $($inboxStaleItems.Count) stale (>$staleAfterDays days).")
+        [void]$sb.AppendLine("")
+    }
     Write-Output $sb.ToString()
 } else {
     Write-Host "============================================================" -ForegroundColor Cyan
@@ -351,6 +407,7 @@ if ($Format -eq "Markdown") {
     Write-Host "  - Companion Gaps     : $($missingCompanions.Count)" -ForegroundColor $(if ($missingCompanions.Count -eq 0) { 'Green' } else { 'Yellow' })
     Write-Host "  - Stub Notes         : $($stubNotes.Count)" -ForegroundColor $(if ($stubNotes.Count -eq 0) { 'Green' } else { 'Gray' })
     Write-Host "  - Orphan Notes       : $($orphanNotes.Count)" -ForegroundColor Gray
+    Write-Host "  - Inbox Backlog      : $($inboxItems.Count) total, $($inboxStaleItems.Count) stale (>$staleAfterDays days)" -ForegroundColor $(if ($inboxStaleItems.Count -eq 0) { 'Green' } else { 'Yellow' })
 
     if ($brokenLinks.Count -gt 0) {
         Write-Host "`nBroken Links Detected ($($brokenLinks.Count)):" -ForegroundColor Red
@@ -368,6 +425,16 @@ if ($Format -eq "Markdown") {
             Write-Host "  - Projects/$($m.Project) missing: $(($m.MissingFiles) -join ', ')" -ForegroundColor DarkYellow
         }
         Write-Host "  Tip: Run with -ScaffoldMissing to auto-generate companion notes." -ForegroundColor Cyan
+    }
+
+    if ($inboxStaleItems.Count -gt 0) {
+        Write-Host "`nInbox Backlog ($($inboxStaleItems.Count) stale):" -ForegroundColor Yellow
+        foreach ($item in ($inboxStaleItems | Select-Object -First 15)) {
+            Write-Host "  $($item.File) - $($item.AgeDays) days" -ForegroundColor DarkYellow
+        }
+        if ($inboxStaleItems.Count -gt 15) {
+            Write-Host "  ... and $($inboxStaleItems.Count - 15) more." -ForegroundColor Gray
+        }
     }
     Write-Host ""
 }
