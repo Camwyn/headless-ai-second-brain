@@ -10,6 +10,10 @@ OpenAI provides a visual modal form in the **ChatGPT Desktop App** (Windows and 
 
 ---
 
+> **Windows users:** never end your vault path with a trailing backslash before the closing
+> quote — `"C:\Users\you\vault\"` breaks the command because that backslash escapes the quote
+> instead of just being part of the path. Use `"C:\Users\you\vault"` (no trailing `\`).
+
 ## 📋 Field-by-Field Instructions
 
 1. Open **ChatGPT Desktop**.

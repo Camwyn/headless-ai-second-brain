@@ -140,7 +140,20 @@ chmod +x ./scripts/setup-mac.sh
 
 *(This verifies Node.js and pre-caches `obsidian-mcp` automatically).*
 
+> **If you don't already have Node.js installed**, the script installs it for you (via
+> `winget` on Windows, `brew` on macOS) — that part may pop up its own confirmation window
+> (Windows may ask for administrator permission). If the script then tells you to close and
+> reopen your terminal, that's expected — a freshly-installed program isn't always visible to
+> a terminal window that was already open before the install happened. Just do what it says
+> and run the same command again in the new window; nothing gets damaged by running it twice.
+
 ### Step 3: Connect Your AI App
+
+> **Windows users, one thing to watch for:** wherever you paste your vault path below (or
+> into the Claude Desktop JSON file), **never end it with a trailing backslash** before the
+> closing quote — `"C:\Users\you\vault\"` breaks both a plain command and a JSON file, because
+> that backslash escapes the quote instead of just being part of the path. Drop the trailing
+> backslash: `"C:\Users\you\vault"` is correct.
 
 #### 💬 Option A: ChatGPT Desktop (Windows & Mac)
 
