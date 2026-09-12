@@ -61,14 +61,22 @@ machine entirely, so a generic script can't resolve it reliably):
 Unlike Mirror Drift, this is a pure filesystem check (location + age, no cross-repo
 reachability or semantic judgment needed) — it runs inside `audit-vault.ps1`/`.sh` directly,
 not as a separate agent-driven pass:
-1. List every `.md` file directly under `<inbox_dir>/`, excluding `README.md` and anything
-   inside `<inbox_dir>/<processed_subfolder>/` — moved-and-filed notes never get re-flagged.
-2. Age comes from frontmatter `created:` if present, else the file's last-write time.
-3. Anything older than `inbox.stale_after_days` is **Stale**; report the total count either way.
+1. List **every file** directly under `<inbox_dir>/` — not just `.md` — excluding `README.md`
+   and anything inside `<inbox_dir>/<processed_subfolder>/` (moved-and-filed items never get
+   re-flagged). A PDF, screenshot, or voice memo dropped in the inbox is a real capture too;
+   it must never go silently uncounted just because this vector can't read its content.
+2. For `.md` files, age comes from frontmatter `created:` if present, else file mtime. For
+   everything else, age is always file mtime — the vector doesn't parse non-markdown content,
+   and says so explicitly in the report (`"Stale (non-markdown, not read)"`) rather than
+   implying it inspected something it didn't.
+3. Anything older than `inbox.stale_after_days` is **Stale**; report the total count (and the
+   non-markdown subset) either way.
 4. **Stays out of the numeric Health Score**, same as Mirror Drift — a full inbox is a
    workflow-hygiene signal, not structural vault integrity.
 5. Never move or file anything automatically — this vector only reports. See
-   `obsidian-status` for the on-demand skill that offers to help file a stale backlog.
+   `obsidian-status` for the on-demand skill that offers to help file a stale backlog (for
+   non-markdown items, that offer is "here's what it is and how old it is," not "here's what
+   it says" — the skill can't read a PDF's content any more than this vector can).
 
 ---
 
@@ -164,11 +172,12 @@ Format the user-facing diagnostic report cleanly:
 
 ### Inbox Backlog
 *(Omitted if the inbox is empty or nothing exceeds the threshold)*
-| Note | Age | Status |
+| Item | Age | Status |
 |---|---|---|
 | `00-INBOX/Quick idea about X.md` | 12 days | ⚠️ Stale |
+| `00-INBOX/receipt-photo.png` | 15 days | ⚠️ Stale (non-markdown, not read - age from file date only) |
 
-3 total in 00-INBOX, 1 stale (>7 days).
+3 total in 00-INBOX (1 non-markdown), 2 stale (>7 days).
 
 ### 💡 Remediation Guidance
 1. **Auto-Scaffold Missing Companions**: Run `/audit-vault --fix-companions` to generate missing templates.

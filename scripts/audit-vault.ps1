@@ -281,26 +281,35 @@ $processedSubfolder = if ($cfg -and $cfg.inbox -and $cfg.inbox.processed_subfold
 $inboxItems = [System.Collections.ArrayList]::new()
 $inboxDirPath = Join-Path $vaultRoot $inboxDirName
 if (Test-Path $inboxDirPath) {
-    $inboxFiles = Get-ChildItem -Path $inboxDirPath -Filter "*.md" -File -Recurse | Where-Object {
+    # ALL files, not just *.md — a PDF, screenshot, or voice memo dropped in the inbox is a
+    # real capture too, and previously went completely unseen (not even counted) rather than
+    # flagged. Markdown gets frontmatter-aware age detection; anything else falls back to file
+    # mtime and is marked non-markdown so the report is honest about what it actually read
+    # versus what it only noticed sitting there.
+    $inboxFiles = Get-ChildItem -Path $inboxDirPath -File -Recurse | Where-Object {
         $_.Name -ne "README.md" -and
         ($_.FullName.Substring($inboxDirPath.Length).TrimStart('\', '/').Split([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)[0] -ne $processedSubfolder)
     }
     foreach ($inf in $inboxFiles) {
+        $isMarkdown = $inf.Extension -eq ".md"
         $createdDate = $inf.LastWriteTime
-        try {
-            $firstLines = Get-Content $inf.FullName -TotalCount 15
-            $frontmatterText = ($firstLines -join "`n")
-            $createdMatch = [regex]::Match($frontmatterText, '(?m)^created:\s*"?([\d-]{10})"?')
-            if ($createdMatch.Success) {
-                $parsed = [DateTime]::MinValue
-                if ([DateTime]::TryParse($createdMatch.Groups[1].Value, [ref]$parsed)) { $createdDate = $parsed }
-            }
-        } catch {}
+        if ($isMarkdown) {
+            try {
+                $firstLines = Get-Content $inf.FullName -TotalCount 15
+                $frontmatterText = ($firstLines -join "`n")
+                $createdMatch = [regex]::Match($frontmatterText, '(?m)^created:\s*"?([\d-]{10})"?')
+                if ($createdMatch.Success) {
+                    $parsed = [DateTime]::MinValue
+                    if ([DateTime]::TryParse($createdMatch.Groups[1].Value, [ref]$parsed)) { $createdDate = $parsed }
+                }
+            } catch {}
+        }
         $ageDays = [Math]::Floor(((Get-Date) - $createdDate).TotalDays)
         [void]$inboxItems.Add([PSCustomObject]@{
-            File    = $inf.FullName.Substring($vaultRoot.Length).TrimStart('\', '/').Replace('\', '/')
-            AgeDays = $ageDays
-            Stale   = $ageDays -gt $staleAfterDays
+            File       = $inf.FullName.Substring($vaultRoot.Length).TrimStart('\', '/').Replace('\', '/')
+            AgeDays    = $ageDays
+            Stale      = $ageDays -gt $staleAfterDays
+            IsMarkdown = $isMarkdown
         })
     }
 }
@@ -330,6 +339,7 @@ $auditResults = [PSCustomObject]@{
     InboxStaleItems       = $inboxStaleItems
     InboxDir              = $inboxDirName
     InboxStaleAfterDays   = $staleAfterDays
+    InboxNonMarkdownCount = @($inboxItems | Where-Object { -not $_.IsMarkdown }).Count
 }
 
 # 7. Render Output
@@ -380,17 +390,19 @@ if ($Format -eq "Markdown") {
     if ($inboxItems.Count -gt 0) {
         [void]$sb.AppendLine("### Inbox Backlog")
         if ($inboxStaleItems.Count -gt 0) {
-            [void]$sb.AppendLine("| Note | Age | Status |")
+            [void]$sb.AppendLine("| Item | Age | Status |")
             [void]$sb.AppendLine("|---|---|---|")
             foreach ($item in ($inboxStaleItems | Select-Object -First 15)) {
-                [void]$sb.AppendLine("| $($item.File) | $($item.AgeDays) days | Stale |")
+                $statusLabel = if ($item.IsMarkdown) { "Stale" } else { "Stale (non-markdown, not read - age from file date only)" }
+                [void]$sb.AppendLine("| $($item.File) | $($item.AgeDays) days | $statusLabel |")
             }
             if ($inboxStaleItems.Count -gt 15) {
                 [void]$sb.AppendLine("*... and $($inboxStaleItems.Count - 15) more stale.*")
             }
             [void]$sb.AppendLine("")
         }
-        [void]$sb.AppendLine("$($inboxItems.Count) total in $inboxDirName, $($inboxStaleItems.Count) stale (>$staleAfterDays days).")
+        $nonMarkdownCount = @($inboxItems | Where-Object { -not $_.IsMarkdown }).Count
+        [void]$sb.AppendLine("$($inboxItems.Count) total in $inboxDirName ($nonMarkdownCount non-markdown), $($inboxStaleItems.Count) stale (>$staleAfterDays days).")
         [void]$sb.AppendLine("")
     }
     Write-Output $sb.ToString()
@@ -407,7 +419,8 @@ if ($Format -eq "Markdown") {
     Write-Host "  - Companion Gaps     : $($missingCompanions.Count)" -ForegroundColor $(if ($missingCompanions.Count -eq 0) { 'Green' } else { 'Yellow' })
     Write-Host "  - Stub Notes         : $($stubNotes.Count)" -ForegroundColor $(if ($stubNotes.Count -eq 0) { 'Green' } else { 'Gray' })
     Write-Host "  - Orphan Notes       : $($orphanNotes.Count)" -ForegroundColor Gray
-    Write-Host "  - Inbox Backlog      : $($inboxItems.Count) total, $($inboxStaleItems.Count) stale (>$staleAfterDays days)" -ForegroundColor $(if ($inboxStaleItems.Count -eq 0) { 'Green' } else { 'Yellow' })
+    $nonMarkdownInboxCount = @($inboxItems | Where-Object { -not $_.IsMarkdown }).Count
+    Write-Host "  - Inbox Backlog      : $($inboxItems.Count) total ($nonMarkdownInboxCount non-markdown), $($inboxStaleItems.Count) stale (>$staleAfterDays days)" -ForegroundColor $(if ($inboxStaleItems.Count -eq 0) { 'Green' } else { 'Yellow' })
 
     if ($brokenLinks.Count -gt 0) {
         Write-Host "`nBroken Links Detected ($($brokenLinks.Count)):" -ForegroundColor Red
@@ -430,7 +443,8 @@ if ($Format -eq "Markdown") {
     if ($inboxStaleItems.Count -gt 0) {
         Write-Host "`nInbox Backlog ($($inboxStaleItems.Count) stale):" -ForegroundColor Yellow
         foreach ($item in ($inboxStaleItems | Select-Object -First 15)) {
-            Write-Host "  $($item.File) - $($item.AgeDays) days" -ForegroundColor DarkYellow
+            $suffix = if ($item.IsMarkdown) { "" } else { " (non-markdown, not read)" }
+            Write-Host "  $($item.File) - $($item.AgeDays) days$suffix" -ForegroundColor DarkYellow
         }
         if ($inboxStaleItems.Count -gt 15) {
             Write-Host "  ... and $($inboxStaleItems.Count - 15) more." -ForegroundColor Gray

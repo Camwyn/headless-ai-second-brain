@@ -32,10 +32,14 @@ thin aggregator, not a second vault-audit engine:
 2. **Mirror Drift** — "0 drifted" if clean, or a short list of drifted/unreachable pairs from
    the same check `obsidian-vault-audit` runs.
 3. **Inbox Backlog** — the count + oldest item's age from the audit script's Inbox Backlog
-   vector. **This is the hook**: if anything is stale, offer *in the same turn* to help file
-   it (read each note, propose a destination in `Projects/`, `Areas/`, or `Resources/`, and on
-   confirmation move it — never delete — into `<inbox_dir>/<processed_subfolder>/`). Don't
-   require a separate command for this; the whole point is removing a step, not adding one.
+   vector, which covers every file in the inbox, not just markdown. **This is the hook**: if
+   anything is stale, offer *in the same turn* to help file it. For a markdown note, that means
+   reading it and proposing a destination in `Projects/`, `Areas/`, or `Resources/`. For
+   anything else (a PDF, screenshot, voice memo) — say plainly that its content can't be read,
+   name what it is and how old it is, and ask the human where it belongs rather than guessing.
+   Either way, on confirmation move it — never delete — into
+   `<inbox_dir>/<processed_subfolder>/`. Don't require a separate command for this; the whole
+   point is removing a step, not adding one.
 4. **Active Projects** — for each `Projects/<name>/`, an open-task count from `Tasks.md` (a
    quick count, not a dump — link to the file for detail).
 5. **Pending Live-Sync Queue** — if `.agents/pending-sync.json` has unflushed entries, mention
@@ -58,7 +62,7 @@ thin aggregator, not a second vault-audit engine:
 
 **Vault**: 86/100 (GOOD) — 5 broken links, 0 companion gaps. Run /audit-vault for detail.
 **Mirrors**: 0 drifted, 3 declared pairs all in sync.
-**Inbox**: 3 notes, 1 stale (12 days old: "Quick idea about X.md"). Want me to help file it?
+**Inbox**: 3 items (1 non-markdown), 2 stale — "Quick idea about X.md" (12 days) and a photo, "receipt-photo.png" (15 days, can't read it — where should this go?). Want me to help file either?
 **Projects**: camwyn-agent-skills (2 open) · manyhats-ledger (5 open) · tradeops-mvp (0 open)
 **Pending sync**: 2 commits queued, not yet flushed to Worklog.md. Run /obsidian-flush.
 ```
