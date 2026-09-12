@@ -55,6 +55,7 @@ headless-ai-second-brain/
 ├── README.md                           # Master guide and setup tutorial
 ├── LICENSE                             # Open-source MIT License
 ├── .gitignore                          # Pre-configured to ignore personal caches
+├── install.ps1 / install.sh            # Links/copies skills, rules, hooks & CLI into ~/.agents/
 │
 ├── vault-template/                     # Sanitized PARA vault skeleton
 │   ├── AI CONTEXT.md                   # The "Constitution" template for brand & voice
@@ -65,26 +66,66 @@ headless-ai-second-brain/
 │   ├── Resources/                      # Knowledge bases & references
 │   └── Archives/                       # Historical records & retrospectives
 │
-├── connectors/                         # Plug-and-play AI configs
-│   ├── chatgpt-desktop/                # Exact visual form instructions & prompts
-│   ├── claude-desktop/                 # claude_desktop_config.json snippet
-│   └── antigravity-ide/                # Universal agent mcp_config.json snippet
+├── skills/                             # The agent behavior this kit is actually named for
+│   ├── SYNCED-FROM.md                  # Provenance note — kept as a deliberate copy, not a submodule
+│   └── obsidian-rag/                   # Grounding, auto-sync, vault-audit, project-init, digest, ADRs
 │
-└── scripts/                            # 1-Click setup automation
-    ├── setup-windows.ps1               # Automated Windows Node & MCP installer
-    └── setup-mac.sh                    # Automated macOS/Linux Node & MCP installer
+├── rules/                              # obsidian-live-sync.md + content-mirror-sync.md (declared repo<->vault mirrors)
+├── hooks/                              # Claude Code SessionStart / PostToolUse hook adapters
+├── scripts/                            # Sync engines (audit-vault, generate-digest, post-commit)
+│   ├── setup-windows.ps1               # Automated Windows Node, MCP & skills installer
+│   └── setup-mac.sh                    # Automated macOS/Linux Node, MCP & skills installer
+├── bin/                                # Standalone obsidian-sync CLI (status/flush/audit/digest)
+│
+└── connectors/                         # Plug-and-play AI configs
+    ├── chatgpt-desktop/                # Exact visual form instructions & prompts
+    ├── claude-desktop/                 # claude_desktop_config.json snippet
+    └── antigravity-ide/                # Universal agent mcp_config.json snippet
 ```
+
+> **Without `skills/`, this is just an organized folder.** The vault skeleton and MCP wiring
+> get an AI reading and writing your notes; the skills are what make it *autonomous* — logging
+> worklogs on commit, keeping ADRs, auditing vault health — instead of something you have to
+> ask for every time. `install.ps1` / `install.sh` (run automatically by the setup scripts
+> below) link them into `~/.agents/` so any MCP-capable agent can use them.
 
 ---
 
 ## 🚀 5-Minute Quickstart
+
+> Keep the whole folder you cloned or downloaded around until Step 3 is done — Step 1 only
+> copies `vault-template/` elsewhere, but Steps 2 and 3 still need `install.ps1`/`install.sh`,
+> `scripts/`, and `connectors/` from this same folder.
 
 ### Step 1: Copy the Vault Skeleton
 1. Copy the contents of `vault-template/` to your chosen local folder (e.g. `C:\Users\username\Documents\Obsidian\my-vault` or `~/Documents/Obsidian/my-vault`).
 2. (Optional) Open the folder once in Obsidian if you want to verify the visual graph or enable **Obsidian Sync** with End-to-End Encryption for your team.
 
 ### Step 2: Run the Setup Script
-Run the automated setup script for your operating system:
+Run the automated setup script for your operating system. This checks Node.js, pre-caches
+`obsidian-mcp`, and installs the skills in `skills/obsidian-rag/`. Installation is
+detection-based, not one-size-fits-all:
+- **`~/.agents/skills`** — always installed. This is where Codex and the emerging cross-tool
+  `SKILL.md` convention read from; it isn't specific to one app, so there's nothing to detect.
+- **`~/.claude/skills`** — only installed if Claude Code or Claude Desktop is already present
+  on your machine (or you say yes to a one-time prompt). It will not create a `~/.claude/`
+  folder for an app you don't have — see `install.ps1 -InstallClaude` / `-SkipClaude` to force
+  either way non-interactively.
+- **`~/.gemini/config/skills`** — Antigravity's global skills directory, same detection-based
+  treatment as Claude (`-InstallAntigravity` / `-SkipAntigravity`). Antigravity *also* reads a
+  project-level `<repo>/.agents/skills/` walking up to the git root — commit that folder in a
+  given project to share skills with a team there, independent of the global install.
+- **Cursor** reads skills per-project from `.cursor/skills/`, not a global folder — copy
+  `skills/obsidian-rag/*` there manually in each project where you want them.
+- **ChatGPT** (the chat product) doesn't scan a local folder — its Skills feature is
+  upload-only (`.zip` via Plugins → Skills) and limited to Business/Enterprise/Healthcare/Edu
+  accounts, not personal Free/Plus/Pro plans. `.agents/skills` is read by **Codex**, a
+  different OpenAI product despite the shared branding. See Step 3's custom instructions
+  snippet instead — that's the real substitute for most ChatGPT users, not a fallback.
+
+Run `install.ps1` / `install.sh` directly (also called automatically by the setup scripts
+below) if you want to re-run just this step, or pass `-Copy` for real copies instead of the
+default directory-junction/symlink behavior.
 
 **On Windows (PowerShell):**
 ```powershell
@@ -102,6 +143,13 @@ chmod +x ./scripts/setup-mac.sh
 ### Step 3: Connect Your AI App
 
 #### 💬 Option A: ChatGPT Desktop (Windows & Mac)
+
+> **Prerequisite:** Connecting custom MCP servers in ChatGPT requires **Plus, Pro, Business,
+> Enterprise, or Edu** — not available on the Free plan. (Separately, ChatGPT's own upload-based
+> Skills feature is Business/Enterprise/Edu-only, but this setup doesn't use it — grounding on
+> `AI CONTEXT.md` comes from the pasted custom-instructions block below, available on any paid
+> plan.)
+
 1. In ChatGPT Desktop, open **Settings → Developer / Advanced → MCP Servers → Add Server**.
 2. Fill out the form:
    - **Name:** `obsidian`
@@ -128,6 +176,25 @@ You and your team can now interact with the vault conversationally:
 | *"What tasks are currently open under Project Alpha?"* | Scans `Projects/Project Alpha/Tasks.md` and outputs a clean checklist. |
 | *"Draft a dispatch about our new launch and save it."* | References your brand guidelines, crafts the article, and calls `obsidian_create_note`. |
 | *"Add a note to today's worklog that we finalized the API."* | Appends a timestamped entry with author attribution to `Worklog.md`. |
+
+---
+
+## 🧠 Skills Included (`skills/obsidian-rag/`)
+
+| Skill | Trigger / Command | Description |
+|---|---|---|
+| **obsidian-setup** | `/obsidian-setup` | Discovers vaults, validates PARA folders, bootstraps `AI CONTEXT.md`. Run this first. |
+| **obsidian-project-init** | `/obsidian-init` | Scans the current repo, creates `Overview.md`/`Decisions.md` in the vault, detects drift on repeat runs. |
+| **obsidian-rag-grounding** | `/obsidian-rag` | Reads `AI CONTEXT.md` plus project/area overrides before creative or architectural work. |
+| **obsidian-auto-sync** | Autonomous / `/obsidian-flush` | Logs commits to `Worklog.md`, tasks to `Tasks.md`, decisions to `Decisions.md`. |
+| **obsidian-decision-sync** | `/obsidian-decision` | Formats a choice into a structured ADR with rejected alternatives. |
+| **obsidian-vault-audit** | `/audit-vault` | Health score, broken links, missing companion notes, drifted content mirrors. |
+| **obsidian-mirror** | `/obsidian-mirror` | Establishes or re-syncs a declared repo↔vault content mirror — full, independent, kept-in-sync copies (see `rules/content-mirror-sync.md`), not a canonical-plus-stub pair. |
+| **obsidian-index** | `/obsidian-index` | Builds `PARA-Index.md`, the master map of content. |
+| **obsidian-digest** | `/obsidian-digest` | Weekly/monthly rollup across all active projects. |
+
+Full details for each live in its own `SKILL.md`; see `skills/SYNCED-FROM.md` for how this
+folder relates to its private upstream.
 
 ---
 
