@@ -22,12 +22,16 @@ if (Get-Command npx -ErrorAction SilentlyContinue) {
 }
 
 # 3. Test obsidian-mcp resolution
-Write-Host "`n[2/3] Pre-caching obsidian-mcp via npx..." -ForegroundColor Yellow
+Write-Host "`n[2/4] Pre-caching obsidian-mcp via npx..." -ForegroundColor Yellow
 npx -y obsidian-mcp --help | Out-Null
 Write-Host "  ✅ obsidian-mcp is ready to serve" -ForegroundColor Green
 
-# 4. Summary instructions
-Write-Host "`n[3/3] Next Steps for Your AI Desktop App:" -ForegroundColor Yellow
+# 4. Install the agent skills (grounding, auto-sync, vault-audit, etc.)
+Write-Host "`n[3/4] Installing agent skills into ~/.agents/..." -ForegroundColor Yellow
+& "$PSScriptRoot\..\install.ps1"
+
+# 5. Summary instructions
+Write-Host "`n[4/4] Next Steps for Your AI Desktop App:" -ForegroundColor Yellow
 Write-Host "  • In ChatGPT Desktop: Go to Settings -> Developer -> MCP Servers -> Add Server"
 Write-Host "    - Command: cmd.exe"
 Write-Host "    - Arguments: /c npx -y obsidian-mcp serve --vault main=`"<YOUR_VAULT_PATH>`""

@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+# Camwyn Agent Skills - Git Post-Commit Hook
+# Triggers autonomous live sync queueing for commits made outside AI agent sessions
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+[ -z "$REPO_ROOT" ] && exit 0
+
+if command -v powershell.exe >/dev/null 2>&1; then
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$REPO_ROOT/scripts/obsidian-post-commit.ps1"
+elif command -v powershell >/dev/null 2>&1; then
+    powershell -NoProfile -ExecutionPolicy Bypass -File "$REPO_ROOT/scripts/obsidian-post-commit.ps1"
+elif command -v pwsh >/dev/null 2>&1; then
+    pwsh -NoProfile -File "$REPO_ROOT/scripts/obsidian-post-commit.ps1"
+elif [ -f "$REPO_ROOT/scripts/obsidian-post-commit.sh" ]; then
+    sh "$REPO_ROOT/scripts/obsidian-post-commit.sh"
+fi
+
+exit 0

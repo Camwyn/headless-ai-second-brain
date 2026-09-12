@@ -7,12 +7,12 @@ tags:
   - ai-context
   - governance
   - constitution
-created: 2026-09-08
+created: <YYYY-MM-DD>
 ---
 
 # Master AI Constitution & Domain Context
 
-> **Instructions for AI Workers:** This document establishes the foundational operating thesis, domain definitions, and editorial/technical guardrails for all AI assistants interacting with this knowledge base. Always align tone, decision logic, and asset generation with this context.
+> **Instructions for AI Workers:** This document establishes the foundational operating thesis, domain definitions, and editorial/technical guardrails for all AI assistants interacting with this knowledge base. Always align tone, decision logic, and asset generation with this context. Read it first, before any other grounding lookup — see `obsidian-rag-grounding`.
 
 ---
 
@@ -68,3 +68,8 @@ When generating copy, dispatches, social posts, or client emails:
    agent's own notes stay plain-text and fact-dense.
 6. **Respect Rejected Alternatives:** Never re-propose an approach a project's `Decisions.md`
    already rejected as an ADR, unless the human explicitly asks to revisit it.
+
+---
+
+*This template is kept identical to `headless-ai-second-brain/vault-template/AI CONTEXT.md`
+(the public starter kit) so the two don't drift. If you change one, change the other.*

@@ -34,13 +34,19 @@ fi
 
 # 3. Pre-cache obsidian-mcp
 echo ""
-echo "[2/3] Pre-caching obsidian-mcp via npx..."
+echo "[2/4] Pre-caching obsidian-mcp via npx..."
 npx -y obsidian-mcp --help >/dev/null 2>&1 || true
 echo "  ✅ obsidian-mcp is ready to serve"
 
-# 4. Instructions
+# 4. Install the agent skills (grounding, auto-sync, vault-audit, etc.)
 echo ""
-echo "[3/3] Next Steps for Your AI Desktop App:"
+echo "[3/4] Installing agent skills into ~/.agents/..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "$SCRIPT_DIR/../install.sh"
+
+# 5. Instructions
+echo ""
+echo "[4/4] Next Steps for Your AI Desktop App:"
 echo "  • In ChatGPT Desktop: Go to Settings -> Developer -> MCP Servers -> Add Server"
 echo "    - Command: npx"
 echo "    - Arguments: -y obsidian-mcp serve --vault main=\"<YOUR_VAULT_PATH>\""

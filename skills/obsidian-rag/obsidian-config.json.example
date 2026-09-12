@@ -1,0 +1,77 @@
+{
+  "provider": "auto",
+  "providers": {
+    "headless_mcp": {
+      "type": "mcp_toolset",
+      "description": "Direct filesystem headless MCP server via npx obsidian-mcp"
+    },
+    "local_rest_api": {
+      "type": "https_rest",
+      "base_url": "https://127.0.0.1:27124",
+      "api_key_env": "OBSIDIAN_REST_API_KEY",
+      "insecure_ssl": true
+    },
+    "mcp_connector": {
+      "type": "in_app_mcp",
+      "description": "In-app Obsidian community plugin (obsidian-mcp-plugin) exposing MCP tools"
+    }
+  },
+  "layout": "para",
+  "para": {
+    "projects_dir": "Projects",
+    "areas_dir": "Areas",
+    "resources_dir": "Resources",
+    "archives_dir": "Archives"
+  },
+  "default_vault": "main",
+  "vault_path": "/absolute/path/to/your/Obsidian/vault",
+  "organization_nesting": "auto",
+  "worktree_support": true,
+  "project_aliases": {
+    "repo-folder-name": "vault-project-folder-name"
+  },
+  "adrs_per_context_limit": 5,
+  "ai_context": {
+    "enabled": true,
+    "path": "AI CONTEXT.md"
+  },
+  "visual_boards": {
+    "enabled": false,
+    "generate_canvas": false,
+    "generate_mermaid": false
+  },
+  "dataview": {
+    "enabled": true,
+    "render_dynamic_queries": true
+  },
+  "digest": {
+    "output_dir": "Areas/Digests",
+    "default_period": "weekly",
+    "include_git_commits": true
+  },
+  "auto_sync": {
+    "enabled": true,
+    "on_commit": true,
+    "on_decision": true,
+    "on_todo": true,
+    "flush_on_session_start": true,
+    "filters": {
+      "commit_level": "milestones_only",
+      "rollup_window_hours": 2
+    },
+    "worklog_archive_limit_lines": 1000
+  },
+  "site_audit": {
+    "reports_dir": "Areas/Audits",
+    "cadence_days": 7,
+    "sites": []
+  },
+  "global_notes": {
+    "tone_and_voice": "Areas/Tone and Voice.md",
+    "design_tokens": "Areas/Design Tokens.md",
+    "architecture": "Areas/Architecture Principles.md"
+  },
+  "legacy_fallbacks": {
+    "system_dir": "System"
+  }
+}

@@ -2,6 +2,12 @@
 
 OpenAI provides a visual modal form in the **ChatGPT Desktop App** (Windows and macOS) to connect local MCP servers.
 
+> **Prerequisite:** Connecting custom MCP servers in ChatGPT requires **Plus, Pro, Business,
+> Enterprise, or Edu** — not available on the Free plan. (Separately, ChatGPT's own upload-based
+> Skills feature is Business/Enterprise/Edu-only, but this setup doesn't use it — grounding on
+> `AI CONTEXT.md` comes from the pasted custom-instructions block below, available on any paid
+> plan.)
+
 ---
 
 ## 📋 Field-by-Field Instructions
@@ -50,6 +56,16 @@ Fill out the form fields as follows:
 ---
 
 ## 🎯 Recommended System Instructions for ChatGPT
+
+> **Why paste this instead of installing a Skill:** ChatGPT's own Skills feature is
+> upload-only (**Plugins → Skills → Create → Upload from your computer**, a `.zip`, not a
+> local folder ChatGPT scans automatically) and — as of writing — limited to Business,
+> Enterprise, Healthcare, and Edu accounts, not personal Free/Plus/Pro plans. `.agents/skills`
+> (what `install.ps1`/`install.sh` populate) is read by **Codex**, not by ChatGPT itself —
+> different product, despite the shared branding. For a personal-plan ChatGPT setup, this
+> pasted instructions block is the practical substitute for the real skill; on an eligible
+> workspace plan, you could instead zip `skills/obsidian-rag/obsidian-rag-grounding/` and
+> upload it as a proper Skill.
 
 In your **ChatGPT Custom Instructions** (or Custom GPT / Project settings), paste this block so ChatGPT automatically recognizes and prioritizes the vault:
 
